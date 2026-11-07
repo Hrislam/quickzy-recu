@@ -267,10 +267,135 @@ function montrer(r) {
     </div>
     <div class="note">${m.pied ? `<b>${echapper(m.pied)}</b>` : ""}Gardez ce reçu : il vaut ticket pour un échange ou un retour.</div>
     ${signature()}`;
-  // L'impression du navigateur propose « Enregistrer au format PDF » partout.
-  document.getElementById("pdf").onclick = () => window.print();
+  const bouton = document.getElementById("pdf");
+  bouton.onclick = () => enregistrerPdf(bouton, { r, m, q, paye, regl, credit });
   const p = document.getElementById("partager");
   if (p) p.onclick = () => navigator.share({ title: `Reçu ${m.nom}`, text: `Reçu ${r.ticket} · ${da(paye)} DA`, url: location.href }).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// LE PDF, FAIT ICI. window.print() ne marche pas sur un téléphone : les
+// navigateurs intégrés (lecteur de QR, appareil photo, WhatsApp, Instagram)
+// l'ignorent, et Safari n'y propose le PDF qu'au bout de trois gestes. La page
+// dessine donc elle-même un vrai fichier PDF (jsPDF, chargé au premier clic),
+// au format d'un ticket de 80 mm, puis :
+//   1. le confie au partage du téléphone (Enregistrer dans Fichiers,
+//      WhatsApp…) quand il sait partager un fichier ;
+//   2. sinon le télécharge ;
+//   3. et seulement si tout échoue, l'impression du navigateur.
+// ---------------------------------------------------------------------------
+const JSPDF = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js";
+let jspdfPret = null;
+function chargerJsPdf() {
+  if (window.jspdf) return Promise.resolve(window.jspdf.jsPDF);
+  jspdfPret ??= new Promise((ok, ko) => {
+    const s = document.createElement("script");
+    s.src = JSPDF; s.async = true; s.crossOrigin = "anonymous";
+    s.onload = () => (window.jspdf ? ok(window.jspdf.jsPDF) : ko(new Error("jsPDF absent")));
+    s.onerror = () => { jspdfPret = null; ko(new Error("jsPDF injoignable")); };
+    document.head.appendChild(s);
+  });
+  return jspdfPret;
+}
+
+/** Le logo réduit à sa taille d'impression, sur fond blanc, en JPEG : embarqué
+ *  tel quel (1260 px, PNG), il pesait 2,4 Mo dans un reçu de quelques lignes. */
+function logoPng() {
+  return new Promise((ok) => {
+    const img = new Image();
+    img.onload = () => {
+      const w = 420, h = Math.round(w * img.naturalHeight / img.naturalWidth);
+      const c = Object.assign(document.createElement("canvas"), { width: w, height: h });
+      const g = c.getContext("2d");
+      g.fillStyle = "#fff"; g.fillRect(0, 0, w, h); g.drawImage(img, 0, 0, w, h);
+      ok({ data: c.toDataURL("image/jpeg", 0.9), ratio: h / w });
+    };
+    img.onerror = () => ok(null);
+    img.src = "quickzy-logo.png";
+  });
+}
+
+/** Les polices standard du PDF ne connaissent que le latin : les espaces fines et le « − » deviennent leurs cousins simples. */
+const pdfTexte = (t) => String(t ?? "").replace(/[   ]/g, " ").replace(/−/g, "-").replace(/[‘’]/g, "'");
+
+async function fabriquerPdf({ r, m, q, paye, regl, credit }) {
+  const [JsPDF, logo] = await Promise.all([chargerJsPdf(), logoPng()]);
+  const L = 80, marge = 6, plein = L - marge * 2;
+  const lignes = r.lignes || [];
+  // La hauteur suit le ticket : un ticket ne s'arrête pas au milieu d'une page A4.
+  const H = 118 + lignes.length * 11 + regl.length * 6 + (m.adresse ? 5 : 0) + (m.telephone ? 5 : 0);
+  const doc = new JsPDF({ unit: "mm", format: [L, H] });
+  const VERT = [18, 60, 43], GRIS = [110, 118, 113], NOIR = [21, 32, 26];
+  let y = 8;
+  const centre = (t, taille, style = "normal", couleur = NOIR) => {
+    doc.setFont("helvetica", style); doc.setFontSize(taille); doc.setTextColor(...couleur);
+    for (const l of doc.splitTextToSize(pdfTexte(t), plein)) { doc.text(l, L / 2, y, { align: "center" }); y += taille * 0.42; }
+  };
+  const bords = (g, d, taille = 9, style = "normal", couleur = NOIR) => {
+    doc.setFont("helvetica", style); doc.setFontSize(taille); doc.setTextColor(...couleur);
+    doc.text(pdfTexte(d), L - marge, y, { align: "right" });
+    const place = plein - doc.getTextWidth(pdfTexte(d)) - 3;
+    doc.text(doc.splitTextToSize(pdfTexte(g), place)[0] || "", marge, y);
+  };
+  const pointilles = () => { doc.setDrawColor(200, 207, 202); doc.setLineDashPattern([1, 1], 0); doc.line(marge, y, L - marge, y); doc.setLineDashPattern([], 0); y += 5; };
+
+  if (logo) { doc.addImage(logo.data, "JPEG", L / 2 - 15, y - 3, 30, 30 * logo.ratio); y += 30 * logo.ratio + 2; }
+  centre(m.nom, 13, "bold"); y += 1;
+  if (m.adresse) centre(m.adresse, 8, "normal", GRIS);
+  if (m.telephone) centre(`Tél. ${m.telephone}`, 8, "normal", GRIS);
+  y += 2; pointilles();
+  bords(`Ticket ${r.ticket}`, `${q.jour} · ${q.heure}`, 8, "normal", GRIS); y += 6;
+  pointilles();
+  for (const l of lignes) {
+    const kg = l.unite === "kg";
+    bords(l.nom, da(l.montant), 9.5); y += 4.2;
+    if (kg || Number(l.qte) !== 1) {
+      doc.setFontSize(7.5); doc.setTextColor(...GRIS);
+      doc.text(pdfTexte(kg ? `${qte(l.qte)} kg × ${da(l.prix)} le kg` : `${qte(l.qte)} × ${da(l.prix)}`), marge, y); y += 4;
+    }
+    y += 1.5;
+  }
+  pointilles();
+  doc.setFillColor(...VERT); doc.roundedRect(marge, y - 1, plein, 13, 2, 2, "F");
+  // Le total sur un bandeau forêt : la couleur de Quickzy, et ce qu'on cherche des yeux.
+  y += 7.4;
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8.5);
+  doc.text(credit ? "TOTAL" : "TOTAL PAYÉ", marge + 3, y);
+  doc.setFontSize(15);
+  doc.text(pdfTexte(`${da(paye)} DA`), L - marge - 3, y + 0.6, { align: "right" });
+  y += 11;
+  for (const [a, b, fort] of regl) { bords(a, b, 9, fort ? "bold" : "normal", fort ? NOIR : GRIS); y += 5.5; }
+  y += 2; pointilles();
+  if (m.pied) { centre(m.pied, 9, "bold"); y += 1; }
+  centre("Gardez ce reçu : il vaut ticket pour un échange ou un retour.", 7, "normal", GRIS);
+  y += 4;
+  centre("QUICKZY OS · TOUT LE MAGASIN, UN SEUL SYSTÈME", 6.5, "normal", GRIS);
+  return doc.output("blob");
+}
+
+async function enregistrerPdf(bouton, donnees) {
+  const avant = bouton.innerHTML;
+  bouton.disabled = true;
+  bouton.innerHTML = "Préparation du PDF…";
+  try {
+    const blob = await fabriquerPdf(donnees);
+    const nom = `Recu-${String(donnees.r.ticket).replace(/[^A-Za-z0-9-]/g, "")}.pdf`;
+    const fichier = new File([blob], nom, { type: "application/pdf" });
+    if (navigator.canShare && navigator.canShare({ files: [fichier] })) {
+      try { await navigator.share({ files: [fichier], title: `Reçu ${donnees.m.nom}` }); return; }
+      catch (e) { if (e && e.name === "AbortError") return; /* refusé : on télécharge */ }
+    }
+    const url = URL.createObjectURL(blob);
+    const a = Object.assign(document.createElement("a"), { href: url, download: nom });
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch {
+    window.print();
+  } finally {
+    bouton.disabled = false;
+    bouton.innerHTML = avant;
+  }
 }
 
 const DEMO = {
