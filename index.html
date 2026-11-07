@@ -5,81 +5,139 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
 <meta name="referrer" content="no-referrer">
-<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#161614" media="(prefers-color-scheme: dark)">
-<title>Votre reçu</title>
+<meta name="theme-color" content="#0c2a1e">
+<link rel="icon" href="quickzy-logo.png">
+<title>Votre reçu · Quickzy OS</title>
 <!--
   LE REÇU ÉLECTRONIQUE — la page que le client ouvre en scannant le QR du
   ticket (Quickzy OS, migration 053, miroir-cloud/016).
 
-  Une page statique, sans construction ni dépendance : elle s'héberge telle
-  quelle sur n'importe quelle origine HTTPS (Vercel, Cloudflare Pages…). Le
-  secret de la vente est dans le FRAGMENT (#…) : le navigateur ne l'envoie
-  jamais au serveur qui sert la page, il n'est dans aucun journal d'accès. La
-  page le passe à qos_recu_lire avec la clé PUBLIQUE du projet — la même que
-  celle que l'application livre déjà (admin-server/src/config.ts).
+  Une page statique, sans construction : elle s'héberge telle quelle (avec
+  quickzy-logo.png à côté) sur n'importe quelle origine HTTPS. Le secret de la
+  vente est dans le FRAGMENT (#…) : le navigateur ne l'envoie jamais au
+  serveur qui sert la page. La page le passe à qos_recu_lire avec la clé
+  PUBLIQUE du projet — celle que l'application livre déjà.
+
+  LA MARQUE : le bandeau forêt de Quickzy (#0C2A1E → #123C2B, les couleurs du
+  rail de l'application), le logo en blanc, le vert vif #37A836 pour « payé ».
+  Le reçu lui-même est une feuille de papier posée sur le bandeau, bord
+  inférieur déchiré : on reconnaît un ticket avant d'avoir lu un chiffre.
 
   ?demo montre un reçu d'exemple, sans appeler le cloud.
 -->
 <style>
   :root {
-    --fond: #f6f5f1; --carte: #ffffff; --texte: #1d1d1b; --doux: #6b6a65; --pale: #9a9892;
-    --filet: rgba(0,0,0,.09); --vert: #2f6b12; --vert-fond: #eaf3de; --ambre: #7a4a08; --ambre-fond: #faeeda;
-    --accent: #1f6f50;
+    --foret: #0c2a1e; --foret-2: #123c2b; --vif: #37a836; --vif-fond: #e3f5e4; --vif-texte: #2e8f2d;
+    --fond: #eef0ee; --papier: #ffffff; --texte: #15201a; --doux: #5f6b64; --pale: #94a099;
+    --filet: #e3e7e4; --pointille: #cfd6d1; --ambre: #8a5a0b; --ambre-fond: #fbefd9;
+    --ombre: 0 1px 2px rgba(12, 42, 30, .06), 0 12px 32px -8px rgba(12, 42, 30, .18);
   }
   @media (prefers-color-scheme: dark) {
-    :root { --fond: #161614; --carte: #22221f; --texte: #f1efe8; --doux: #b4b2a9; --pale: #888780;
-      --filet: rgba(255,255,255,.1); --vert: #c0dd97; --vert-fond: #27500a; --ambre: #fac775; --ambre-fond: #633806;
-      --accent: #5dcaa5; }
+    :root { --fond: #0b0f0d; --papier: #171c19; --texte: #eef2ef; --doux: #a7b3ac; --pale: #6f7c75;
+      --filet: #252c28; --pointille: #343c37; --vif-fond: rgba(108, 199, 106, .14); --vif-texte: #6cc76a;
+      --ambre: #f3c46f; --ambre-fond: rgba(243, 196, 111, .12);
+      --ombre: 0 1px 2px rgba(0, 0, 0, .4), 0 16px 40px -12px rgba(0, 0, 0, .7); }
   }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
-  body { margin: 0; background: var(--fond); color: var(--texte);
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
-  main { max-width: 440px; margin: 0 auto; padding: max(20px, env(safe-area-inset-top)) 16px 32px; }
-  .tete { text-align: center; padding: 8px 0 20px; }
-  .mag { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: -.01em; }
-  .coord { font-size: 13px; color: var(--doux); margin: 4px 0 0; }
-  .meta { font-size: 13px; color: var(--pale); margin: 10px 0 0; }
-  .total { text-align: center; padding: 4px 0 20px; }
-  .total .lib { font-size: 13px; color: var(--doux); }
-  .total .mt { font-size: 34px; font-weight: 600; letter-spacing: -.02em; line-height: 1.15; }
-  .total .mt small { font-size: 16px; font-weight: 500; margin-left: 4px; color: var(--doux); }
-  .pastille { display: inline-block; margin-top: 8px; font-size: 13px; padding: 3px 12px; border-radius: 999px; background: var(--vert-fond); color: var(--vert); }
+  body { margin: 0; min-height: 100vh; background: var(--fond); color: var(--texte);
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    font-variant-numeric: tabular-nums; -webkit-font-smoothing: antialiased; }
+
+  /* --- Le bandeau de marque --- */
+  .bandeau { position: relative; background: var(--foret); color: #fff; overflow: hidden;
+    padding: max(18px, env(safe-area-inset-top)) 20px 92px; text-align: center; }
+  .bandeau::before { content: ""; position: absolute; inset: 0; opacity: .5;
+    background-image: radial-gradient(rgba(255, 255, 255, .06) 1px, transparent 1px); background-size: 14px 14px; }
+  .bandeau::after { content: ""; position: absolute; left: 50%; top: -40%; width: 140%; height: 120%; transform: translateX(-50%);
+    background: radial-gradient(closest-side, rgba(55, 168, 54, .22), transparent); pointer-events: none; }
+  .bandeau > * { position: relative; z-index: 1; }
+  .logo { height: 42px; width: auto; filter: brightness(0) invert(1); opacity: .96; display: block; margin: 0 auto; }
+  .etiquette { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 4px 11px; border-radius: 999px;
+    font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
+    background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); color: rgba(255, 255, 255, .85); }
+  .etiquette i { width: 6px; height: 6px; border-radius: 50%; background: var(--vif); box-shadow: 0 0 0 3px rgba(55, 168, 54, .25); }
+  .mag { margin: 18px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+  .coord { margin: 6px 0 0; font-size: 13px; color: rgba(255, 255, 255, .62); line-height: 1.45; }
+
+  /* --- La feuille du reçu --- */
+  main { max-width: 440px; margin: -72px auto 0; padding: 0 16px 28px; position: relative; z-index: 2; }
+  /* L'ombre sur l'enveloppe : le masque du bord déchiré couperait celle de la feuille. */
+  .ombre { filter: drop-shadow(0 12px 22px rgba(12, 42, 30, .16)) drop-shadow(0 1px 1px rgba(12, 42, 30, .06)); }
+  @media (prefers-color-scheme: dark) { .ombre { filter: drop-shadow(0 16px 28px rgba(0, 0, 0, .6)); } }
+  .feuille { background: var(--papier); border-radius: 20px 20px 0 0; padding: 22px 20px 30px; position: relative;
+    /* le bord déchiré du ticket */
+    -webkit-mask: radial-gradient(circle 7px at 50% 100%, transparent 98%, #000) bottom / 18px 100% repeat-x;
+            mask: radial-gradient(circle 7px at 50% 100%, transparent 98%, #000) bottom / 18px 100% repeat-x; }
+  .feuille-pied { height: 0; }
+  .meta { display: flex; justify-content: space-between; gap: 8px; font-size: 12.5px; color: var(--pale); }
+  .meta b { color: var(--doux); font-weight: 600; }
+  .total { text-align: center; padding: 22px 0 18px; }
+  .total .lib { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--pale); }
+  .total .mt { font-size: 44px; font-weight: 750; letter-spacing: -.03em; line-height: 1.1; margin-top: 4px; }
+  .total .mt small { font-size: 17px; font-weight: 600; letter-spacing: 0; margin-left: 5px; color: var(--doux); }
+  .pastille { display: inline-flex; align-items: center; gap: 6px; margin-top: 12px; font-size: 13px; font-weight: 600;
+    padding: 5px 13px; border-radius: 999px; background: var(--vif-fond); color: var(--vif-texte); }
+  .pastille svg { width: 14px; height: 14px; }
   .pastille.ambre { background: var(--ambre-fond); color: var(--ambre); }
-  .carte { background: var(--carte); border: 1px solid var(--filet); border-radius: 14px; padding: 4px 16px; }
-  .ligne { display: flex; justify-content: space-between; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--filet); }
-  .ligne:last-child { border-bottom: 0; }
-  .ligne .nom { min-width: 0; overflow-wrap: anywhere; }
-  .ligne .det { display: block; font-size: 13px; color: var(--pale); }
-  .ligne .mt { white-space: nowrap; }
-  .regl { padding: 12px 4px 0; }
-  .regl .ligne { border: 0; padding: 4px 0; font-size: 15px; }
+  .coupe { border: 0; border-top: 2px dashed var(--pointille); margin: 4px -4px; }
+  .titre { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--pale); margin: 16px 0 4px; }
+  .ligne { display: flex; justify-content: space-between; align-items: flex-start; gap: 14px; padding: 10px 0; }
+  .ligne + .ligne { border-top: 1px solid var(--filet); }
+  .ligne .nom { min-width: 0; overflow-wrap: anywhere; font-weight: 500; }
+  .ligne .det { display: block; font-size: 13px; color: var(--pale); font-weight: 400; margin-top: 1px; }
+  .ligne .mt { white-space: nowrap; font-weight: 600; }
+  .regl .ligne { padding: 5px 0; border: 0; font-size: 15px; }
   .regl .ligne span:first-child { color: var(--doux); }
-  .regl .fort span { color: var(--texte) !important; font-weight: 600; }
-  .actions { margin-top: 20px; display: grid; gap: 10px; }
-  button { font: inherit; font-size: 15px; width: 100%; min-height: 46px; border-radius: 12px; cursor: pointer;
-    border: 1px solid var(--filet); background: var(--carte); color: var(--texte); }
-  button.principal { background: var(--accent); border-color: var(--accent); color: #fff; }
-  @media (prefers-color-scheme: dark) { button.principal { color: #04342c; } }
-  .pied { text-align: center; font-size: 13px; color: var(--pale); margin-top: 22px; }
-  .pied b { display: block; color: var(--doux); font-weight: 500; margin-bottom: 4px; }
-  .etat { text-align: center; padding: 56px 8px; }
-  .etat h1 { font-size: 20px; font-weight: 600; margin: 14px 0 6px; }
+  .regl .fort span { color: var(--texte) !important; font-weight: 700; }
+  .ticketno { margin-top: 18px; text-align: center; font: 600 12px/1 ui-monospace, "SF Mono", Consolas, monospace; letter-spacing: .22em; color: var(--pale); }
+
+  /* --- Les gestes --- */
+  .actions { display: grid; grid-template-columns: 1fr auto; gap: 10px; margin-top: 22px; }
+  button { font: inherit; font-size: 15px; font-weight: 600; min-height: 50px; border-radius: 14px; cursor: pointer; padding: 0 18px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px; border: 1px solid var(--filet); background: var(--papier); color: var(--texte);
+    transition: transform .12s ease, background .15s ease; }
+  button:active { transform: scale(.98); }
+  button svg { width: 18px; height: 18px; }
+  button.principal { background: var(--foret-2); border-color: var(--foret-2); color: #fff; }
+  @media (prefers-color-scheme: dark) { button.principal { background: #1e7057; border-color: #1e7057; } }
+  .seul { grid-template-columns: 1fr; }
+  .note { text-align: center; font-size: 13px; color: var(--pale); margin: 18px 8px 0; }
+  .note b { display: block; color: var(--doux); font-size: 14px; font-weight: 600; margin-bottom: 3px; }
+
+  /* --- La signature Quickzy --- */
+  .sig { display: flex; flex-direction: column; align-items: center; gap: 6px; margin-top: 30px; padding-bottom: env(safe-area-inset-bottom); }
+  .sig img { height: 22px; width: auto; opacity: .8; }
+  @media (prefers-color-scheme: dark) { .sig img { filter: brightness(0) invert(1); opacity: .55; } }
+  .sig span { font-size: 10.5px; letter-spacing: .2em; text-transform: uppercase; color: var(--pale); }
+
+  /* --- Les états (chargement, en route, introuvable) --- */
+  .etat { text-align: center; padding: 34px 6px 30px; }
+  .etat h1 { font-size: 20px; font-weight: 700; margin: 16px 0 6px; letter-spacing: -.01em; }
   .etat p { color: var(--doux); margin: 0 auto; max-width: 30ch; }
-  .rond { width: 56px; height: 56px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; background: var(--ambre-fond); color: var(--ambre); font-size: 26px; }
-  .sig { text-align: center; font-size: 11px; letter-spacing: .18em; color: var(--pale); margin-top: 26px; text-transform: uppercase; }
-  .cache { display: none; }
+  .rond { width: 60px; height: 60px; border-radius: 50%; margin: 0 auto; display: grid; place-items: center; background: var(--ambre-fond); color: var(--ambre); }
+  .rond svg { width: 28px; height: 28px; }
+  .rond.vert { background: var(--vif-fond); color: var(--vif-texte); }
+  .tourne { width: 26px; height: 26px; border-radius: 50%; border: 3px solid var(--filet); border-top-color: var(--vif); margin: 6px auto 14px; animation: t 0.9s linear infinite; }
+  @keyframes t { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .tourne { animation: none; } }
+
   @media print {
-    body { background: #fff; color: #000; }
-    .actions, .sig { display: none; }
-    .carte { border-color: #ccc; }
+    body { background: #fff; }
+    .bandeau { -webkit-print-color-adjust: exact; print-color-adjust: exact; padding-bottom: 24px; }
+    main { margin-top: 0; }
+    .feuille { box-shadow: none; -webkit-mask: none; mask: none; border: 1px solid #ddd; border-radius: 0; }
+    .actions { display: none; }
   }
 </style>
 </head>
 <body>
+<header class="bandeau" id="bandeau">
+  <img class="logo" src="quickzy-logo.png" alt="Quickzy OS">
+  <div class="etiquette"><i aria-hidden="true"></i>Reçu électronique</div>
+</header>
 <main id="page" aria-live="polite">
-  <div class="etat"><p>Chargement de votre reçu…</p></div>
+  <div class="feuille"><div class="etat"><div class="tourne" aria-hidden="true"></div><p>Chargement de votre reçu…</p></div></div>
 </main>
 <script>
 "use strict";
@@ -89,7 +147,17 @@ const PROJET = "https://dwciqxhpdgheuyaapocp.supabase.co";
 const CLE_PUBLIQUE = "sb_publishable_AiukcTPr_PbQdVKqoSmZAQ_TC5iUYr2";
 
 const page = document.getElementById("page");
+const bandeau = document.getElementById("bandeau");
 const echapper = (t) => String(t ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+const ICONES = {
+  ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.2 4.2L19 7"/></svg>',
+  pdf: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19.5h14"/></svg>',
+  partager: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V4m0 0L8 8m4-4l4 4M6 12v6.5A1.5 1.5 0 007.5 20h9a1.5 1.5 0 001.5-1.5V12"/></svg>',
+  horloge: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 2"/></svg>',
+  question: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.2 9a3 3 0 015.6 1c0 2-3 2.5-3 4.5M12 18h.01"/></svg>',
+  reseau: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 9a14 14 0 0119 0M6 12.5a9 9 0 0112 0M9.5 16a4 4 0 015 0M12 19.5h.01"/></svg>',
+};
 
 // L'ARGENT RESTE EN TEXTE : « 1260.00 » devient « 1 260,00 » sans passer par
 // un flottant (même règle que la caisse).
@@ -110,67 +178,27 @@ const MODES = { especes: "Espèces", carte: "Carte", cheque: "Chèque", avoir: "
 
 function quand(iso) {
   const t = new Date(iso);
-  if (isNaN(t)) return "";
-  return t.toLocaleString("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  if (isNaN(t)) return { jour: "", heure: "" };
+  return {
+    jour: t.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }),
+    heure: t.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+  };
 }
 
-function etat(icone, titre, texte, bouton) {
-  page.innerHTML = `<div class="etat"><div class="rond" aria-hidden="true">${icone}</div><h1>${echapper(titre)}</h1><p>${echapper(texte)}</p>
-    ${bouton ? `<div class="actions" style="max-width:280px;margin:22px auto 0"><button class="principal" id="reessayer">${echapper(bouton)}</button></div>` : ""}</div>
-    <div class="sig">Quickzy OS</div>`;
+function signature() {
+  return `<div class="sig"><img src="quickzy-logo.png" alt="Quickzy OS"><span>Tout le magasin, un seul système</span></div>`;
+}
+
+function etat(icone, titre, texte, bouton, vert) {
+  page.innerHTML = `<div class="ombre"><div class="feuille"><div class="etat"><div class="rond${vert ? " vert" : ""}" aria-hidden="true">${ICONES[icone]}</div>
+    <h1>${echapper(titre)}</h1><p>${echapper(texte)}</p>
+    ${bouton ? `<div class="actions seul" style="max-width:280px;margin:24px auto 0"><button class="principal" id="reessayer">${echapper(bouton)}</button></div>` : ""}</div></div></div>
+    ${signature()}`;
   const b = document.getElementById("reessayer");
-  if (b) b.onclick = () => { page.innerHTML = '<div class="etat"><p>Recherche de votre reçu…</p></div>'; charger(); };
-}
-
-function montrer(r) {
-  const m = r.magasin || {};
-  document.title = `Reçu ${r.ticket} · ${m.nom}`;
-  const aPayer = zero(r.arrondi) ? r.total : null;
-  const lignes = (r.lignes || []).map((l) => {
-    const kg = l.unite === "kg";
-    const unSeul = !kg && Number(l.qte) === 1;
-    const det = kg ? `${qte(l.qte)} kg × ${da(l.prix)} le kg` : unSeul ? "" : `${qte(l.qte)} × ${da(l.prix)}`;
-    return `<div class="ligne"><span class="nom">${echapper(l.nom)}${det ? `<span class="det">${det}</span>` : ""}</span><span class="mt">${da(l.montant)}</span></div>`;
-  }).join("");
-
-  const regl = [];
-  if (!zero(r.arrondi)) {
-    regl.push(["Total des articles", da(r.total)]);
-    regl.push(["Arrondi espèces", (String(r.arrondi).startsWith("-") ? "" : "+") + da(r.arrondi)]);
-  }
-  const reglements = (r.reglements && r.reglements.length) ? r.reglements : null;
-  if (reglements) for (const x of reglements) regl.push([MODES[x.mode] || x.mode, da(x.montant)]);
-  else if (r.mode === "credit") regl.push(["À crédit", da(r.total)]);
-  else regl.push([r.mode === "especes" ? "Espèces reçues" : (MODES[r.mode] || "Payé"), da(r.paye)]);
-  if (!zero(r.rendu)) regl.push(["Rendu", da(r.rendu), true]);
-  if (r.retour && !zero(r.retour)) regl.push(["Rendu au client depuis (retour)", da(r.retour)]);
-
-  // Le total payé, arrondi compris : ce que le client a sorti de sa poche.
-  const paye = aPayer ?? sommeTexte(r.total, r.arrondi);
-  const credit = r.mode === "credit";
-  const pastille = credit ? '<span class="pastille ambre">Vente à crédit</span>'
-    : `<span class="pastille">✓ Payé${r.mode === "especes" && !reglements ? " en espèces" : r.mode === "carte" && !reglements ? " par carte" : ""}</span>`;
-
-  page.innerHTML = `
-    <header class="tete">
-      <p class="mag">${echapper(m.nom)}</p>
-      ${m.adresse || m.telephone ? `<p class="coord">${[m.adresse && echapper(m.adresse), m.telephone && `Tél. ${echapper(m.telephone)}`].filter(Boolean).join("<br>")}</p>` : ""}
-      <p class="meta">Ticket ${echapper(r.ticket)} · ${echapper(quand(r.le))}</p>
-    </header>
-    <section class="total">
-      <div class="lib">${credit ? "Total" : "Total payé"}</div>
-      <div class="mt">${da(paye)}<small>DA</small></div>
-      ${pastille}
-    </section>
-    <section class="carte" aria-label="Articles">${lignes}</section>
-    <section class="regl">${regl.map(([a, b, f]) => `<div class="ligne${f ? " fort" : ""}"><span>${echapper(a)}</span><span>${b}</span></div>`).join("")}</section>
-    <div class="actions">
-      <button class="principal" id="pdf">Enregistrer en PDF</button>
-    </div>
-    <div class="pied">${m.pied ? `<b>${echapper(m.pied)}</b>` : ""}Gardez ce reçu : il vaut ticket pour un échange ou un retour.</div>
-    <div class="sig">Quickzy OS · Tout le magasin, un seul système</div>`;
-  // L'impression du navigateur propose « Enregistrer au format PDF » partout.
-  document.getElementById("pdf").onclick = () => window.print();
+  if (b) b.onclick = () => {
+    page.innerHTML = '<div class="feuille"><div class="etat"><div class="tourne" aria-hidden="true"></div><p>Recherche de votre reçu…</p></div></div>';
+    charger();
+  };
 }
 
 /** total + arrondi signé, en centimes entiers : jamais de flottant. */
@@ -183,6 +211,72 @@ function sommeTexte(a, b) {
   };
   const t = c(a) + c(b); const neg = t < 0n; const x = neg ? -t : t;
   return `${neg ? "-" : ""}${x / 100n}.${String(x % 100n).padStart(2, "0")}`;
+}
+
+function montrer(r) {
+  const m = r.magasin || {};
+  const q = quand(r.le);
+  document.title = `Reçu ${r.ticket} · ${m.nom}`;
+
+  // Le magasin dans le bandeau, sous la marque : c'est SON reçu.
+  bandeau.innerHTML = `<img class="logo" src="quickzy-logo.png" alt="Quickzy OS">
+    <div class="etiquette"><i aria-hidden="true"></i>Reçu électronique</div>
+    <p class="mag">${echapper(m.nom)}</p>
+    ${m.adresse || m.telephone ? `<p class="coord">${[m.adresse && echapper(m.adresse), m.telephone && `Tél. ${echapper(m.telephone)}`].filter(Boolean).join("<br>")}</p>` : ""}`;
+
+  const lignes = (r.lignes || []).map((l) => {
+    const kg = l.unite === "kg";
+    const unSeul = !kg && Number(l.qte) === 1;
+    const det = kg ? `${qte(l.qte)} kg × ${da(l.prix)} le kg` : unSeul ? "" : `${qte(l.qte)} × ${da(l.prix)}`;
+    return `<div class="ligne"><span class="nom">${echapper(l.nom)}${det ? `<span class="det">${det}</span>` : ""}</span><span class="mt">${da(l.montant)}</span></div>`;
+  }).join("");
+  const n = (r.lignes || []).length;
+
+  const regl = [];
+  if (!zero(r.arrondi)) {
+    regl.push(["Total des articles", da(r.total)]);
+    regl.push(["Arrondi espèces", (String(r.arrondi).startsWith("-") ? "" : "+") + da(r.arrondi)]);
+  }
+  const reglements = (r.reglements && r.reglements.length) ? r.reglements : null;
+  if (reglements) for (const x of reglements) regl.push([MODES[x.mode] || x.mode, da(x.montant)]);
+  else if (r.mode === "credit") regl.push(["À crédit", da(r.total)]);
+  else regl.push([r.mode === "especes" ? "Espèces reçues" : (MODES[r.mode] || "Payé"), da(r.paye)]);
+  if (!zero(r.rendu)) regl.push(["Rendu", da(r.rendu), true]);
+  if (r.retour && !zero(r.retour)) regl.push(["Rendu depuis (retour)", da(r.retour)]);
+
+  // Le total payé, arrondi compris : ce que le client a sorti de sa poche.
+  const paye = zero(r.arrondi) ? r.total : sommeTexte(r.total, r.arrondi);
+  const credit = r.mode === "credit";
+  const seulMode = !reglements ? r.mode : null;
+  const pastille = credit ? '<span class="pastille ambre">Vente à crédit</span>'
+    : `<span class="pastille">${ICONES.ok}Payé${seulMode === "especes" ? " en espèces" : seulMode === "carte" ? " par carte" : ""}</span>`;
+  const partage = typeof navigator.share === "function";
+
+  page.innerHTML = `
+    <div class="ombre"><article class="feuille">
+      <div class="meta"><span><b>${echapper(q.jour)}</b></span><span>${echapper(q.heure)}</span></div>
+      <section class="total">
+        <div class="lib">${credit ? "Total" : "Total payé"}</div>
+        <div class="mt">${da(paye)}<small>DA</small></div>
+        ${pastille}
+      </section>
+      <hr class="coupe">
+      <div class="titre">${n} article${n > 1 ? "s" : ""}</div>
+      <section aria-label="Articles">${lignes}</section>
+      <hr class="coupe" style="margin-top:8px">
+      <section class="regl" style="padding-top:10px">${regl.map(([a, b, f]) => `<div class="ligne${f ? " fort" : ""}"><span>${echapper(a)}</span><span>${b}</span></div>`).join("")}</section>
+      <div class="ticketno">TICKET ${echapper(r.ticket)}</div>
+    </article></div>
+    <div class="actions${partage ? "" : " seul"}">
+      <button class="principal" id="pdf">${ICONES.pdf}Enregistrer en PDF</button>
+      ${partage ? `<button id="partager" aria-label="Partager le reçu">${ICONES.partager}</button>` : ""}
+    </div>
+    <div class="note">${m.pied ? `<b>${echapper(m.pied)}</b>` : ""}Gardez ce reçu : il vaut ticket pour un échange ou un retour.</div>
+    ${signature()}`;
+  // L'impression du navigateur propose « Enregistrer au format PDF » partout.
+  document.getElementById("pdf").onclick = () => window.print();
+  const p = document.getElementById("partager");
+  if (p) p.onclick = () => navigator.share({ title: `Reçu ${m.nom}`, text: `Reçu ${r.ticket} · ${da(paye)} DA`, url: location.href }).catch(() => {});
 }
 
 const DEMO = {
@@ -202,7 +296,7 @@ async function charger() {
   if (new URLSearchParams(location.search).has("demo")) return montrer(DEMO);
   const jeton = decodeURIComponent(location.hash.replace(/^#/, "")).trim();
   if (!/^[A-Za-z0-9_-]{20,64}$/.test(jeton)) {
-    return etat("?", "Reçu introuvable", "Ce lien ne mène à aucun reçu. Scannez à nouveau le QR imprimé sur votre ticket.");
+    return etat("question", "Reçu introuvable", "Ce lien ne mène à aucun reçu. Scannez à nouveau le QR de votre ticket.");
   }
   let r;
   try {
@@ -215,7 +309,7 @@ async function charger() {
     if (!res.ok) throw new Error(String(res.status));
     r = await res.json();
   } catch {
-    return etat("!", "Pas de connexion", "Votre reçu n’a pas pu être chargé. Vérifiez votre connexion internet.", "Réessayer");
+    return etat("reseau", "Pas de connexion", "Votre reçu n’a pas pu être chargé. Vérifiez votre connexion internet.", "Réessayer");
   }
   if (r.etat === "ok") return montrer(r);
   if (r.etat === "en_route") {
@@ -223,9 +317,9 @@ async function charger() {
     // minutes, parfois plus si le magasin est hors ligne. On réessaie seul.
     essais++;
     if (essais < 30) setTimeout(charger, 20000);
-    return etat("⏳", "Votre reçu arrive", "Le magasin est en train de l’envoyer. Cette page se met à jour toute seule ; vous pouvez aussi revenir plus tard avec le même QR.", "Réessayer maintenant");
+    return etat("horloge", "Votre reçu arrive", "Le magasin est en train de l’envoyer. Cette page se met à jour toute seule ; vous pouvez aussi revenir plus tard avec le même QR.", "Réessayer maintenant", true);
   }
-  return etat("?", "Reçu introuvable", "Ce lien ne mène à aucun reçu. Scannez à nouveau le QR imprimé sur votre ticket.");
+  return etat("question", "Reçu introuvable", "Ce lien ne mène à aucun reçu. Scannez à nouveau le QR de votre ticket.");
 }
 window.addEventListener("hashchange", () => { essais = 0; charger(); });
 charger();
