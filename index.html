@@ -53,11 +53,7 @@
     background: radial-gradient(closest-side, rgba(55, 168, 54, .22), transparent); pointer-events: none; }
   .bandeau > * { position: relative; z-index: 1; }
   .logo { height: 42px; width: auto; filter: brightness(0) invert(1); opacity: .96; display: block; margin: 0 auto; }
-  .etiquette { display: inline-flex; align-items: center; gap: 6px; margin-top: 14px; padding: 4px 11px; border-radius: 999px;
-    font-size: 11.5px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase;
-    background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .12); color: rgba(255, 255, 255, .85); }
-  .etiquette i { width: 6px; height: 6px; border-radius: 50%; background: var(--vif); box-shadow: 0 0 0 3px rgba(55, 168, 54, .25); }
-  .mag { margin: 18px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+  .mag { margin: 16px 0 0; font-size: 22px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
   .coord { margin: 6px 0 0; font-size: 13px; color: rgba(255, 255, 255, .62); line-height: 1.45; }
 
   /* --- La feuille du reçu --- */
@@ -134,7 +130,6 @@
 <body>
 <header class="bandeau" id="bandeau">
   <img class="logo" src="quickzy-logo.png" alt="Quickzy OS">
-  <div class="etiquette"><i aria-hidden="true"></i>Reçu électronique</div>
 </header>
 <main id="page" aria-live="polite">
   <div class="feuille"><div class="etat"><div class="tourne" aria-hidden="true"></div><p>Chargement de votre reçu…</p></div></div>
@@ -220,7 +215,6 @@ function montrer(r) {
 
   // Le magasin dans le bandeau, sous la marque : c'est SON reçu.
   bandeau.innerHTML = `<img class="logo" src="quickzy-logo.png" alt="Quickzy OS">
-    <div class="etiquette"><i aria-hidden="true"></i>Reçu électronique</div>
     <p class="mag">${echapper(m.nom)}</p>
     ${m.adresse || m.telephone ? `<p class="coord">${[m.adresse && echapper(m.adresse), m.telephone && `Tél. ${echapper(m.telephone)}`].filter(Boolean).join("<br>")}</p>` : ""}`;
 
